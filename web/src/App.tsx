@@ -20,7 +20,18 @@ export default function App() {
       setState(await fn());
       trackEvent(name);
     } catch (e) {
-      setError((e as Error).message);
+      const err = e as Error;
+      setError(err.message);
+      // Pendo Track Event: an API call failed and the error message replaced the counter update.
+      if (typeof window !== "undefined") {
+        const status = /failed: (\d{3})$/.exec(err.message)?.[1];
+        window.pendo?.track?.("API error shown", {
+          action: name,
+          error_type: err.name || "Error",
+          http_status: status ? Number(status) : null,
+          error_message: err.message.substring(0, 100),
+        });
+      }
     }
   };
 
